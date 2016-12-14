@@ -2,16 +2,22 @@ package example.sony.ifttt_listener;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.util.Date;
 
 /**
  * Created by junaid on 16/10/06.
@@ -23,11 +29,31 @@ public class FCMMessageReceiverService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
         Log.i("fcm", "received notification "+remoteMessage.getData().toString());
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        try {
+            String currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
+            Intent i = new Intent("UPDATED");
+            i.putExtra("Key", currentDateTimeString+": "+remoteMessage.getData().toString());
+            Log.i("time", currentDateTimeString+": "+remoteMessage.getData().toString());
+            sendBroadcast(i);
+        }catch (Exception e){e.printStackTrace();}
+
+        handler.post(new Runnable() {
+
+            @Override
+            public void run() {
+                Toast.makeText(FCMMessageReceiverService.this, remoteMessage.getData().toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
 
             PowerManager.WakeLock screenLock = ((PowerManager) getSystemService(POWER_SERVICE)).newWakeLock(
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "TAG");
             screenLock.acquire();
             screenLock.release();
+
+
+
 //        try {
 //            if (remoteMessage.getData().get("power").contains("off")) {
 //                goToSleep(SystemClock.uptimeMillis(), 1, 1);
